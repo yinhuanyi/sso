@@ -26,6 +26,7 @@ var manager *manage.Manager
 var srv *server.Server
 
 func Init(cfg *settings.Oauth2Config) (err error) {
+
 	manager = manage.NewDefaultManager()
 	manager.MapTokenStorage(oredis.NewRedisStore(&redis.Options{
 		Addr: "127.0.0.1:6379",

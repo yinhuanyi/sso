@@ -3,12 +3,9 @@ package session
 import (
 	"log"
 	"net/http"
-	"net/url"
 	"sso/sso/settings"
 
 	"gopkg.in/boj/redistore.v1"
-
-	"encoding/gob"
 
 	"github.com/gorilla/sessions"
 )
@@ -16,8 +13,6 @@ import (
 var store *redistore.RediStore
 
 func Init(cfg *settings.SessionConfig) (err error) {
-
-	gob.Register(url.Values{})
 
 	store, err = redistore.NewRediStore(10, "tcp", ":6379", "", []byte(cfg.HashKey))
 	if err != nil {
@@ -34,30 +29,33 @@ func Init(cfg *settings.SessionConfig) (err error) {
 	return
 }
 
-func Get(r *http.Request, name string) (val interface{}, err error) {
+func Get(r *http.Request, name string) (sessionValue string, err error) {
 
 	session, err := store.Get(r, settings.Conf.SessionConfig.SessionId)
 	if err != nil {
 		return
 	}
 
-	val = session.Values[name]
+	if session.Values[name] != nil {
+		sessionValue = session.Values[name].(string)
+	}
 
 	return
 }
 
-func Set(w http.ResponseWriter, r *http.Request, name string, val interface{}) (err error) {
+func Set(w http.ResponseWriter, r *http.Request, name string, sessionValue string) (err error) {
 
 	session, err := store.Get(r, settings.Conf.SessionConfig.SessionId)
 	if err != nil {
 		return
 	}
 
-	session.Values[name] = val
+	session.Values[name] = sessionValue
 
 	err = session.Save(r, w)
 
 	return
+
 }
 
 func Delete(w http.ResponseWriter, r *http.Request, name string) (err error) {

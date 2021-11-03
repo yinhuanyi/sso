@@ -24,6 +24,7 @@ func GetUserIdByNamePwd(param *model.UserLoginParam) (userId string, err error) 
 	if err != nil {
 		return
 	}
+
 	userId = strconv.Itoa(int(userIdInt))
 	return
 }

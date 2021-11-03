@@ -8,11 +8,13 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 	"sso/sso/model"
 	"sso/sso/service"
 	"sso/sso/session"
+	"sso/sso/utils"
+
+	"go.uber.org/zap"
 
 	"github.com/go-oauth2/oauth2/v4/errors"
 )
@@ -28,50 +30,55 @@ func PasswordAuthorizationHandler(username, password string) (userId string, err
 	return
 }
 
-func UserAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string, err error) {
+func UserAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userId string, err error) {
 
-	v, err := session.Get(r, "LoggedInUserID")
-	if err != nil {
+	if userId, err = session.Get(r, "LoggedInUserID"); err != nil {
 		return
 	}
 
-	if v == nil {
+	if userId == "" {
+
 		if r.Form == nil {
-			r.ParseForm()
+			if err = r.ParseForm(); err != nil {
+				return
+			}
 		}
-		session.Set(w, r, "RequestForm", r.Form)
+
+		if err = session.Set(w, r, "RequestForm", r.Form.Encode()); err != nil {
+			return
+		}
 
 		http.Redirect(w, r, "/login", http.StatusFound)
 
-		return
 	}
-
-	userID = v.(string)
 
 	return
 }
 
 func AuthorizeScopeHandler(w http.ResponseWriter, r *http.Request) (scope string, err error) {
 
-	if r.Form == nil {
-		r.ParseForm()
+	if err = r.ParseForm(); err != nil {
+		return
 	}
 
-	s := config.ScopeFilter(r.Form.Get("client_id"), r.Form.Get("scope"))
-	if s == nil {
+	scopeObj := utils.GetClientScope(r.Form.Get("client_id"), r.Form.Get("scope"))
+	if scopeObj == nil {
 		http.Error(w, "Invalid Scope", http.StatusBadRequest)
 		return
 	}
-	scope = config.ScopeJoin(s)
+
+	scope = utils.ScopeNameJoin(scopeObj)
 
 	return
 }
 
 func InternalErrorHandler(err error) (re *errors.Response) {
-	log.Println("Internal Error:", err.Error())
+
+	zap.L().Error("Oauth2.0 Internal Error", zap.Error(err))
+
 	return
 }
 
 func ResponseErrorHandler(re *errors.Response) {
-	log.Println("Response Error:", re.Error.Error())
+	zap.L().Error("Oauth2.0 Response Error", zap.Error(re.Error))
 }

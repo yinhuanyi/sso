@@ -35,4 +35,5 @@ func GetUserIdByNamePwd(user *model.User) (userId int64, err error) {
 
 	userId = user.UserId
 	return
+
 }
