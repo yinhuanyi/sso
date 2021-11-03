@@ -1,6 +1,7 @@
 package session
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"sso/sso/settings"
@@ -14,17 +15,23 @@ import (
 
 var store *redistore.RediStore
 
-func Init(cfg *settings.SessionConfig) {
+func Init(cfg *settings.SessionConfig) (err error) {
 
 	gob.Register(url.Values{})
 
-	store, _ = redistore.NewRediStore(10, "tcp", ":6379", "", []byte(cfg.HashKey))
+	store, err = redistore.NewRediStore(10, "tcp", ":6379", "", []byte(cfg.HashKey))
+	if err != nil {
+		log.Printf("session初始化失败：%s\n", err.Error())
+		return
+	}
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   60 * 20,
 		HttpOnly: true,
 		Secure:   true,
 	}
+
+	return
 }
 
 func Get(r *http.Request, name string) (val interface{}, err error) {

@@ -16,7 +16,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var db *sqlx.DB
+var Db *sqlx.DB
 
 func Init(cfg *settings.MysqlConfig) (err error) {
 
@@ -31,18 +31,19 @@ func Init(cfg *settings.MysqlConfig) (err error) {
 	defer func() {
 		r := recover()
 		if r != nil {
-			log.Fatalf("连接数据库失败: %s\n", r)
+			log.Printf("连接数据库失败: %s\n", r)
+			return
 		}
 	}()
 
 	// 如果连接不上，这里会panic
-	db = sqlx.MustConnect("mysql", dsn)
-	db.SetMaxOpenConns(cfg.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.MaxIdleConns)
+	Db = sqlx.MustConnect("mysql", dsn)
+	Db.SetMaxOpenConns(cfg.MaxOpenConns)
+	Db.SetMaxIdleConns(cfg.MaxIdleConns)
 	return
 
 }
 
 func Close() {
-	_ = db.Close()
+	_ = Db.Close()
 }

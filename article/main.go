@@ -5,4 +5,4 @@
  * @Function:
  **/
 
-package goods
+package article

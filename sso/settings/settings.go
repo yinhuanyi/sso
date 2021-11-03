@@ -83,12 +83,13 @@ func Init(filePath string) (err error) {
 	viper.SetConfigFile(filePath)
 
 	if err = viper.ReadInConfig(); err != nil {
-		log.Fatalf("配置文件读取失败: %s\n", err.Error())
+		log.Printf("配置文件读取失败: %s\n", err.Error())
 		return
 	}
 
 	if err = viper.Unmarshal(Conf); err != nil {
-		log.Fatalf("配置文件映射到结构体失败：%s\n", err.Error())
+		log.Printf("配置文件映射到结构体失败：%s\n", err.Error())
+		return
 	}
 
 	viper.WatchConfig()
@@ -96,7 +97,8 @@ func Init(filePath string) (err error) {
 	viper.OnConfigChange(func(in fsnotify.Event) {
 		log.Println("配置文件修改了")
 		if err = viper.Unmarshal(Conf); err != nil {
-			log.Fatalf("配置文件映射到结构体失败：%s\n", err.Error())
+			log.Fatalf("配置文件重新加载失败：%s\n", err.Error())
+			return
 		}
 	})
 
