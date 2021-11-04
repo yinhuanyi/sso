@@ -25,11 +25,12 @@ func Init(mode string) *gin.Engine {
 	r.Use(middlewares.RequestLogger(), middlewares.GinRecovery(true))
 
 	v1 := r.Group("/api/v1")
-	v1.GET("/authorize", controllers.AuthorizeHandler) // 获取授权码
-	v1.Any("/login", controllers.LoginHandler)         // 用户登录同时处理GET和POST请求
-	v1.GET("/logout", controllers.LogoutHandler)       // 用户登出
-	v1.POST("/token", controllers.TokenHandler)        // 获取token，刷新token，refresh也会被刷新
-	v1.GET("/verify", controllers.VerifyHandler)       // 验证token
+	v1.GET("/authorize", controllers.AuthorizeHandler)     // 获取授权码
+	v1.GET("/reauthorize", controllers.ReAuthorizeHandler) // 获取授权码
+	v1.Any("/login", controllers.LoginHandler)             // 用户登录同时处理GET和POST请求
+	v1.GET("/logout", controllers.LogoutHandler)           // 用户登出
+	v1.POST("/token", controllers.TokenHandler)            // 获取token，刷新token，refresh也会被刷新
+	v1.GET("/verify", controllers.VerifyHandler)           // 验证token
 
 	return r
 }

@@ -9,8 +9,15 @@ package oauth2
 
 import (
 	"log"
-	"sso/sso/controllers"
+	"net/http"
+	"sso/sso/model"
+	"sso/sso/service"
+	"sso/sso/session"
 	"sso/sso/settings"
+	"sso/sso/utils"
+
+	"github.com/go-oauth2/oauth2/v4/errors"
+	"go.uber.org/zap"
 
 	"github.com/go-oauth2/oauth2/v4/generates"
 	"github.com/go-oauth2/oauth2/v4/manage"
@@ -22,19 +29,19 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-var manager *manage.Manager
-var srv *server.Server
+var Manager *manage.Manager
+var Srv *server.Server
 
 func Init(cfg *settings.Oauth2Config) (err error) {
 
-	manager = manage.NewDefaultManager()
-	manager.MapTokenStorage(oredis.NewRedisStore(&redis.Options{
+	Manager = manage.NewDefaultManager()
+	Manager.MapTokenStorage(oredis.NewRedisStore(&redis.Options{
 		Addr: "127.0.0.1:6379",
 		DB:   1,
 	}))
 
-	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+	Manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
+	Manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
 	clientStore := store.NewClientStore()
 
 	for _, v := range cfg.Client {
@@ -48,14 +55,76 @@ func Init(cfg *settings.Oauth2Config) (err error) {
 		}
 	}
 
-	manager.MapClientStorage(clientStore)
+	Manager.MapClientStorage(clientStore)
 
-	srv = server.NewDefaultServer(manager)
-	srv.SetPasswordAuthorizationHandler(controllers.PasswordAuthorizationHandler)
-	srv.SetUserAuthorizationHandler(controllers.UserAuthorizeHandler)
-	srv.SetAuthorizeScopeHandler(controllers.AuthorizeScopeHandler)
-	srv.SetInternalErrorHandler(controllers.InternalErrorHandler)
-	srv.SetResponseErrorHandler(controllers.ResponseErrorHandler)
+	Srv = server.NewDefaultServer(Manager)
+	Srv.SetPasswordAuthorizationHandler(passwordAuthorizationHandler)
+	Srv.SetUserAuthorizationHandler(userAuthorizeHandler)
+	Srv.SetAuthorizeScopeHandler(authorizeScopeHandler)
+	Srv.SetInternalErrorHandler(internalErrorHandler)
+	Srv.SetResponseErrorHandler(responseErrorHandler)
 
 	return
+}
+
+func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userId string, err error) {
+
+	if userId, err = session.Get(r, "LoggedInUserID"); err != nil {
+		return
+	}
+
+	if userId == "" {
+
+		if err = r.ParseForm(); err != nil {
+			return
+		}
+
+		if err = session.Set(w, r, "RequestForm", r.Form.Encode()); err != nil {
+			return
+		}
+
+		http.Redirect(w, r, "/api/v1/login", http.StatusFound)
+
+	}
+
+	return
+}
+
+func passwordAuthorizationHandler(username, password string) (userId string, err error) {
+
+	param := &model.UserLoginParam{
+		Username: username,
+		Password: password,
+	}
+	userId, err = service.GetUserIdByNamePwd(param)
+
+	return
+}
+
+func authorizeScopeHandler(w http.ResponseWriter, r *http.Request) (scope string, err error) {
+
+	if err = r.ParseForm(); err != nil {
+		return
+	}
+
+	scopeObj := utils.GetClientScope(r.Form.Get("client_id"), r.Form.Get("scope"))
+	if scopeObj == nil {
+		http.Error(w, "Invalid Scope", http.StatusBadRequest)
+		return
+	}
+
+	scope = utils.ScopeNameJoin(scopeObj)
+
+	return
+}
+
+func internalErrorHandler(err error) (re *errors.Response) {
+
+	zap.L().Error("Oauth2.0 Internal Error", zap.Error(err))
+
+	return
+}
+
+func responseErrorHandler(re *errors.Response) {
+	zap.L().Error("Oauth2.0 Response Error", zap.Error(re.Error))
 }

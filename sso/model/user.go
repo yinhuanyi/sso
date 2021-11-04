@@ -7,6 +7,8 @@
 
 package model
 
+import "sso/sso/settings"
+
 type User struct {
 	UserId   int64  `json:"user_id"  db:"user_id"`
 	Username string `json:"username" db:"username"`
@@ -16,4 +18,9 @@ type User struct {
 type UserLoginParam struct {
 	Username string `json:"username" db:"username"`
 	Password string `json:"password" db:"password"`
+}
+
+type ClientScope struct {
+	Client settings.ClientConfig
+	Scope  []settings.ScopeConfig
 }

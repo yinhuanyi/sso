@@ -5,7 +5,7 @@ port: 10541
 
 log:
   level: "debug"
-  filename: "sso.log"
+  filename: "sso/logs/sso.log"
   max_size: 20
   max_age: 30
   max_backups: 7
