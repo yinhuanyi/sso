@@ -191,8 +191,8 @@ func LoginHandler(c *gin.Context) {
 			}
 
 			if err = session.Set(c.Writer, c.Request, "LoggedInUserID", userID); err != nil {
-				ResponseError(c, CodeServerInternalError)
 				zap.L().Error("[LoginHandler]：session.Set", zap.Error(err))
+				ResponseError(c, CodeServerInternalError)
 				return
 			}
 
@@ -212,6 +212,13 @@ func LogoutHandler(c *gin.Context) {
 }
 
 func TokenHandler(c *gin.Context) {
+
+	err := oauth2.Srv.HandleTokenRequest(c.Writer, c.Request)
+	if err != nil {
+		zap.L().Error("[TokenHandler]：oauth2.Srv.HandleTokenRequest", zap.Error(err))
+		ResponseError(c, CodeServerInternalError)
+		return
+	}
 
 }
 

@@ -1,0 +1,16 @@
+.idea/
+.DS_Store
+
+*.log
+
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+go.sum
+
+*.iml
