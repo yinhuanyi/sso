@@ -16,11 +16,12 @@ type User struct {
 }
 
 type UserLoginParam struct {
-	Username string `json:"username" db:"username"`
-	Password string `json:"password" db:"password"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type ClientScope struct {
 	Client settings.ClientConfig
 	Scope  []settings.ScopeConfig
+	Error  string
 }

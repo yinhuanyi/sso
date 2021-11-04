@@ -127,4 +127,6 @@ func internalErrorHandler(err error) (re *errors.Response) {
 
 func responseErrorHandler(re *errors.Response) {
 	zap.L().Error("Oauth2.0 Response Error", zap.Error(re.Error))
+
+	return
 }

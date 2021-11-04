@@ -33,7 +33,6 @@ func GetUserIdByNamePwd(user *model.User) (userId int64, err error) {
 		return 0, mysqlconnect.ErrorInvalidPassword
 	}
 
-	userId = user.UserId
-	return
+	return user.UserId, nil
 
 }

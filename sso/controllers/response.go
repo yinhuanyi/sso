@@ -10,6 +10,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,6 +55,10 @@ func (c ResCode) GetMsg() string {
 		msg = CodeMsgMap[CodeServerBusy]
 	}
 	return msg
+}
+
+func (c ResCode) ToString() string {
+	return strconv.Itoa(int(c))
 }
 
 func ResponseError(c *gin.Context, code ResCode) {
