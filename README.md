@@ -2,3 +2,9 @@
 
 ### 授权码模式
 - 请求地址：http://localhost:10541/api/v1/authorize?client_id=client_1&response_type=code&scope=all&state=xyz&redirect_uri=http://localhost:10001/cb
+
+### implicit
+- 请求地址：http://localhost:10541/api/v1/authorize?client_id=client_1&response_type=token&scope=all&state=xyz&redirect_uri=http://localhost:10001/cb
+
+### 密码模式
+- 请求

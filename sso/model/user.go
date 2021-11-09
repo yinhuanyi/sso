@@ -25,3 +25,20 @@ type ClientScope struct {
 	Scope  []settings.ScopeConfig
 	Error  string
 }
+
+/*
+   data := map[string]interface{}{
+       "expires_in": int64(token.GetAccessCreateAt().Add(token.GetAccessExpiresIn()).Sub(time.Now()).Seconds()),
+       "user_id": token.GetUserID(),
+       "client_id": token.GetClientID(),
+       "scope": token.GetScope(),
+       "domain": cli.GetDomain(),
+   }
+*/
+
+type ClientInfo struct {
+	Expire   int64  `json:"expire" binding:"required"`
+	UserId   string `json:"user_id" binding:"required"`
+	ClientId string `json:"client_id" binding:"required"`
+	Scope    string
+}

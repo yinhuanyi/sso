@@ -8,6 +8,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"html/template"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"sso/sso/oauth2"
 	"sso/sso/service"
 	"strconv"
+	"time"
 
 	"sso/sso/session"
 	"sso/sso/utils"
@@ -114,6 +116,7 @@ func getRequestForm(c *gin.Context) (data *model.ClientScope, err error) {
 
 }
 
+// LoginHandler 登录
 func LoginHandler(c *gin.Context) {
 
 	switch c.Request.Method {
@@ -207,14 +210,30 @@ func LoginHandler(c *gin.Context) {
 	}
 }
 
+// LogoutHandler 登出
 func LogoutHandler(c *gin.Context) {
+	var redirectUri string
+
+	if redirectUri = c.Query("redirect_uri"); redirectUri == "" {
+		zap.L().Error("[LogoutHandler]：c.Query", zap.Error(errors.New("No RedirectUri")))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+
+	if err := session.Delete(c.Writer, c.Request, "LoggedInUserID"); err != nil {
+		zap.L().Error("[LogoutHandler]：session.Delete", zap.Error(err))
+		ResponseError(c, CodeServerInternalError)
+		return
+	}
+
+	c.Redirect(http.StatusFound, redirectUri)
 
 }
 
+// TokenHandler 获取token或刷新token
 func TokenHandler(c *gin.Context) {
 
-	err := oauth2.Srv.HandleTokenRequest(c.Writer, c.Request)
-	if err != nil {
+	if err := oauth2.Srv.HandleTokenRequest(c.Writer, c.Request); err != nil {
 		zap.L().Error("[TokenHandler]：oauth2.Srv.HandleTokenRequest", zap.Error(err))
 		ResponseError(c, CodeServerInternalError)
 		return
@@ -222,6 +241,31 @@ func TokenHandler(c *gin.Context) {
 
 }
 
+// VerifyHandler 验证token
 func VerifyHandler(c *gin.Context) {
+
+	token, err := oauth2.Srv.ValidationBearerToken(c.Request)
+	if err != nil {
+		zap.L().Error("[VerifyHandler]：oauth2.Srv.ValidationBearerToken", zap.Error(err))
+		ResponseError(c, CodeInvalidToken)
+		return
+	}
+
+	clientInfo, err := oauth2.Manager.GetClient(context.Background(), token.GetClientID())
+	if err != nil {
+		zap.L().Error("[VerifyHandler]：oauth2.Manager.GetClient", zap.Error(err))
+		ResponseError(c, CodeServerInternalError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"expires_in": int64(token.GetAccessCreateAt().Add(token.GetAccessExpiresIn()).Sub(time.Now()).Seconds()),
+		"user_id":    token.GetUserID(),
+		"client_id":  token.GetClientID(),
+		"scope":      token.GetScope(),
+		"domain":     clientInfo.GetDomain(),
+	}
+
+	ResponseSuccess(c, data)
 
 }
