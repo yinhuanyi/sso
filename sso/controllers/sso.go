@@ -212,6 +212,7 @@ func LoginHandler(c *gin.Context) {
 
 // LogoutHandler 登出
 func LogoutHandler(c *gin.Context) {
+
 	var redirectUri string
 
 	if redirectUri = c.Query("redirect_uri"); redirectUri == "" {
